@@ -3,6 +3,7 @@ import json
 from utils import ExceptionPeticion, ExceptionCustom, JSONEncoder
 from peticion_post import peticion_post
 from peticion_put import peticion_put
+from peticion_get import peticion_get
 
 
 def lambda_handler(event, context):
@@ -21,8 +22,12 @@ def lambda_handler(event, context):
             body= event.get("body")
             res= peticion_post(body)
         elif method == "PUT":
+            params= event.get("queryStringParameters")
             body= event.get("body")
-            res= peticion_put(body)
+            res= peticion_put(params, body)
+        elif method == "GET":
+            params= event.get("queryStringParameters")
+            res= peticion_get(params)
         else:
             raise ExceptionCustom("<<RaiseCustom>> No se encontro metodo")
         return {

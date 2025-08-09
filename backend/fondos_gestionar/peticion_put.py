@@ -10,7 +10,7 @@ from utils import ExceptionPeticion, ExceptionCustom
 from lib.dynamo_lib import DynamoDBHandler, parse_format_dynamo
 from env_ import VariablesEnv
 
-def peticion_put(body:Any)->Dict:
+def peticion_put(params:Any, body:Any)->Dict:
     """peticion para cancelar el fondo"""
     if body is None:
         raise ExceptionPeticion(
