@@ -1,7 +1,7 @@
 """peticion put"""
 import json
 import copy
-from typing import List, Dict
+from typing import List, Dict, Any
 from decimal import Decimal
 from datetime import datetime, timedelta
 from schema import Use, And, Schema
@@ -10,7 +10,7 @@ from utils import ExceptionPeticion, ExceptionCustom
 from lib.dynamo_lib import DynamoDBHandler, parse_format_dynamo
 from env_ import VariablesEnv
 
-def peticion_put(body):
+def peticion_put(body:Any)->Dict:
     """peticion para cancelar el fondo"""
     if body is None:
         raise ExceptionPeticion(
@@ -25,7 +25,7 @@ def peticion_put(body):
         if not isinstance(body, dict):
             raise ExceptionCustom("<<raise custom>> formato incorrecto")
 
-        Schema({
+        schema_body= Schema({
             "id_user": And(
                 Use(int),
                 error= "'id_user' debe ser numerico"
@@ -35,7 +35,7 @@ def peticion_put(body):
                 error= "'id_producto' debe ser numerico"
             ),
         })
-
+        body= schema_body.validate(body)
         id_user= body["id_user"]
         id_producto= body["id_producto"]
     except Exception as ex:

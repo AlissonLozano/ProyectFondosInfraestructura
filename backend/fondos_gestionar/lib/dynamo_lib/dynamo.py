@@ -1,5 +1,5 @@
 import math
-from typing import Dict, List
+from typing import Dict, List, Optional
 from decimal import Decimal
 import boto3
 
@@ -119,36 +119,90 @@ class DynamoDBHandler():
         )
         return response
 
-    def get_all_items(self, table_name:str, searchobj:dict):
+    def get_all_items(self, table_name:str, searchobj:Optional[Dict]=None):
         """consultar toda la información"""
         table_client= self._dynamodb_resource.Table(table_name)
-        response=[]
-        page = 0
-        limit = 10
-        if "page" in searchobj and "limit" in searchobj:
-            page = searchobj.get("page")
-            limit = searchobj.get("limit")
-            del searchobj["page"]
-            del searchobj["limit"]
 
-        response = table_client.scan()
+        expression= None
+        attribute_value= None
+        if searchobj is not None:
+            if len(searchobj) > 0:
+                expression= f"{', '.join([f'{x} = :{x}' for x in searchobj.keys()])}"
+                attribute_value = {f""":{key}""":val for key ,val in searchobj.items()}
+
+        response=[]
+        if expression is None:
+            response = table_client.scan()
+        else:
+            response = table_client.scan(
+                FilterExpression= expression,
+                ExpressionAttributeValues=attribute_value
+            )
         data = response['Items']
 
         while 'LastEvaluatedKey' in response:
-            response = table_client.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
+            if expression is None:
+                response = table_client.scan(
+                    ExclusiveStartKey=response['LastEvaluatedKey']
+                )
+            else:
+                response = table_client.scan(
+                    ExclusiveStartKey=response['LastEvaluatedKey'],
+                    FilterExpression= expression,
+                    ExpressionAttributeValues=attribute_value
+                )
             data.extend(response['Items'])
 
-        # responseItems=[]
-        # for item in data:
-        #     tempData = {}
-        #     for subItems in item.keys():
-        #         for x in item[subItems].keys():
-        #             tempData[subItems]=item[subItems][x]
-        #     responseItems.append(tempData)
-        maxpages = math.ceil(len(data)/limit)
-        lastvec = data[limit*(page-1):limit*page]
-        return   lastvec , maxpages
-        # return data ,10
+        return data
+
+    def get_search_base(self,
+        table_name:str,
+        expression:Optional[str]= None,
+        attribute_name:Optional[Dict]= None,
+        attribute_value:Optional[Dict]= None
+    ):
+        """consultar toda la información"""
+        table_client= self._dynamodb_resource.Table(table_name)
+
+        response=[]
+        if expression is None:
+            response = table_client.scan()
+        else:
+            if attribute_name is None:
+                response = table_client.scan(
+                    FilterExpression= expression,
+                    ExpressionAttributeValues= attribute_value
+                )
+            else:
+                response = table_client.scan(
+                    FilterExpression= expression,
+                    ExpressionAttributeNames= attribute_name,
+                    ExpressionAttributeValues= attribute_value
+                )
+        data = response['Items']
+
+        while 'LastEvaluatedKey' in response:
+            if expression is None:
+                response = table_client.scan(
+                    ExclusiveStartKey=response['LastEvaluatedKey']
+                )
+            else:
+                if attribute_name is None:
+                    response = table_client.scan(
+                        ExclusiveStartKey=response['LastEvaluatedKey'],
+                        FilterExpression= expression,
+                        ExpressionAttributeValues= attribute_value
+                    )
+                else:
+                    response = table_client.scan(
+                        ExclusiveStartKey=response['LastEvaluatedKey'],
+                        FilterExpression= expression,
+                        ExpressionAttributeNames= attribute_name,
+                        ExpressionAttributeValues= attribute_value
+                    )
+            data.extend(response['Items'])
+
+        return data
 
 
 def parse_format_dynamo(data:Dict)->Dict:
