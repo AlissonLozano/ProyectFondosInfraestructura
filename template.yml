@@ -57,28 +57,30 @@ Resources:
             Path: /fondos-movimientos
             Method: ANY
 
-  # FondosUserFunction:
-  #   Type: "AWS::Serverless::Function"
-  #   Properties:
-  #     FunctionName: "FondosUser"
-  #     Handler: lambda_function.lambda_handler
-  #     Runtime: python3.11
-  #     CodeUri: ./backend/fondos_user
-  #     Policies:
-  #       - DynamoDBCrudPolicy:
-  #           TableName: !Ref TableFondosUser
-  #     Environment:
-  #       Variables:
-  #         TableFondosUser: !Ref TableFondosUser
-  #     Layers:
-  #       - !Ref LayerSchema
-  #     Events:
-  #       HelloAPI:
-  #         Type: Api
-  #         Properties:
-  #           Path: /fondos-user
-  #           Method: ANY
+  FondosUserFunction:
+    Type: "AWS::Serverless::Function"
+    Properties:
+      FunctionName: "FondosUser"
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.11
+      CodeUri: ./backend/fondos_user
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableFondosUser
+      Environment:
+        Variables:
+          AWS_REGION_SERVICES: !Sub "${AWS::Region}"
+          TABLE_FONDO_SUSER: !Ref TableFondosUser
+      Layers:
+        - !Ref LayerSchema
+      Events:
+        HelloAPI:
+          Type: Api
+          Properties:
+            Path: /fondos-user
+            Method: ANY
 
+  # ===== S3 PARA FRONTEND =====
   FrontendBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -92,6 +94,14 @@ Resources:
         IndexDocument: index.html
         ErrorDocument: error.html
 
+  # ===== OAI PARA CLOUDFRONT =====
+  FrontendOAI:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub "Access Identity for ${AWS::StackName} frontend bucket"
+
+  # ===== POLICY PARA S3 =====
   FrontendBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
@@ -99,9 +109,39 @@ Resources:
       PolicyDocument:
         Statement:
           - Effect: Allow
-            Principal: "*"
+            Principal:
+              CanonicalUser: !GetAtt FrontendOAI.S3CanonicalUserId
             Action: "s3:GetObject"
             Resource: !Sub "${FrontendBucket.Arn}/*"
+
+  # ===== CLOUDFRONT =====
+  FrontendDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        Origins:
+          - DomainName: !GetAtt FrontendBucket.RegionalDomainName
+            Id: FrontendS3Origin
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${FrontendOAI}"
+        DefaultCacheBehavior:
+          TargetOriginId: FrontendS3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+        PriceClass: PriceClass_100
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
 
   TableFondosProductos:
     Type: AWS::Serverless::SimpleTable
@@ -145,10 +185,13 @@ Resources:
         - python3.11
 
 Outputs:
+  CloudFrontURL:
+    Description: URL pública de CloudFront
+    Value: !Sub "https://${FrontendDistribution.DomainName}"
   WebsiteURL:
     Description: URL del sitio web estático en S3
     Value: !GetAtt FrontendBucket.WebsiteURL
 
   MyApi:
     Description: "API Gateway endpoint URL"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
