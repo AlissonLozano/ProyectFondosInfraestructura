@@ -20,10 +20,11 @@ Resources:
             TableName: !Ref TableFondosUser
       Environment:
         Variables:
-          TableFondosProductos: !Ref TableFondosProductos
-          TableFondosGestionarProductos: !Ref TableFondosGestionarProductos
-          TableFondosMovimientos: !Ref TableFondosMovimientos
-          TableFondosUser: !Ref TableFondosUser
+          AWS_REGION_SERVICES: !Sub "${AWS::Region}"
+          TABLE_FONDOS_PRODUCTOS: !Ref TableFondosProductos
+          TABLE_FONDOS_GESTIONAR_PRODUCTOS: !Ref TableFondosGestionarProductos
+          TABLE_FONDOS_MOVIMIENTOS: !Ref TableFondosMovimientos
+          TABLE_FONDO_SUSER: !Ref TableFondosUser
       Layers:
         - !Ref LayerSchema
       Events:
@@ -45,7 +46,8 @@ Resources:
             TableName: !Ref TableFondosMovimientos
       Environment:
         Variables:
-          TableFondosMovimientos: !Ref TableFondosMovimientos
+          AWS_REGION_SERVICES: !Sub "${AWS::Region}"
+          TABLE_FONDOS_MOVIMIENTOS: !Ref TableFondosMovimientos
       Layers:
         - !Ref LayerSchema
       Events:

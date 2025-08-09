@@ -5,8 +5,9 @@ from enum import Enum
 class VariablesEnv(Enum):
     """clase que tiene almacenada las variables
     de entorno"""
-    AWS_REGION_SERVICES= "us-east-1"
-    TABLE_FONDOS_PRODUCTOS= "fondos_product"
-    TABLE_FONDO_SUSER= "fondos_user"
-    TABLE_FONDOS_MOVIMIENTOS= "fondos_movimientos"
-    TABLE_FONDOS_GESTIONAR_PRODUCTOS= "fondos_gestionar_productos"
+
+    AWS_REGION_SERVICES= os.getenv("AWS_REGION_SERVICES")
+    TABLE_FONDOS_PRODUCTOS= os.getenv("TABLE_FONDOS_PRODUCTOS")
+    TABLE_FONDO_SUSER= os.getenv("TABLE_FONDO_SUSER")
+    TABLE_FONDOS_MOVIMIENTOS= os.getenv("TABLE_FONDOS_MOVIMIENTOS")
+    TABLE_FONDOS_GESTIONAR_PRODUCTOS= os.getenv("TABLE_FONDOS_GESTIONAR_PRODUCTOS")
