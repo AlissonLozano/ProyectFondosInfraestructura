@@ -1,0 +1,152 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
+
+Resources:
+  FondosGestionarFunction:
+    Type: "AWS::Serverless::Function"
+    Properties:
+      FunctionName: "FondosGestionar"
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.11
+      CodeUri: ./backend/fondos_gestionar
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableFondosProductos
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableFondosGestionarProductos
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableFondosMovimientos
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableFondosUser
+      Environment:
+        Variables:
+          TableFondosProductos: !Ref TableFondosProductos
+          TableFondosGestionarProductos: !Ref TableFondosGestionarProductos
+          TableFondosMovimientos: !Ref TableFondosMovimientos
+          TableFondosUser: !Ref TableFondosUser
+      Layers:
+        - !Ref LayerSchema
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /fondos-gestionar
+            Method: ANY
+
+  FondosMovimientosFunction:
+    Type: "AWS::Serverless::Function"
+    Properties:
+      FunctionName: "FondosMovimientos"
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.11
+      CodeUri: ./backend/fondos_movimientos
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableFondosMovimientos
+      Environment:
+        Variables:
+          TableFondosMovimientos: !Ref TableFondosMovimientos
+      Layers:
+        - !Ref LayerSchema
+      Events:
+        HelloAPI:
+          Type: Api
+          Properties:
+            Path: /fondos-movimientos
+            Method: ANY
+
+  # FondosUserFunction:
+  #   Type: "AWS::Serverless::Function"
+  #   Properties:
+  #     FunctionName: "FondosUser"
+  #     Handler: lambda_function.lambda_handler
+  #     Runtime: python3.11
+  #     CodeUri: ./backend/fondos_user
+  #     Policies:
+  #       - DynamoDBCrudPolicy:
+  #           TableName: !Ref TableFondosUser
+  #     Environment:
+  #       Variables:
+  #         TableFondosUser: !Ref TableFondosUser
+  #     Layers:
+  #       - !Ref LayerSchema
+  #     Events:
+  #       HelloAPI:
+  #         Type: Api
+  #         Properties:
+  #           Path: /fondos-user
+  #           Method: ANY
+
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-frontend"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: false
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: false
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: "s3:GetObject"
+            Resource: !Sub "${FrontendBucket.Arn}/*"
+
+  TableFondosProductos:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: fondos_product
+      PrimaryKey:
+        Name: id
+        Type: String
+
+  TableFondosGestionarProductos:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: fondos_gestionar_productos
+      PrimaryKey:
+        Name: id
+        Type: String
+
+  TableFondosMovimientos:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: fondos_movimientos
+      PrimaryKey:
+        Name: id
+        Type: String
+
+  TableFondosUser:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: fondos_user
+      PrimaryKey:
+        Name: id
+        Type: String
+
+  LayerSchema:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: lib-schema
+      Description: "Capa con la librería schema"
+      ContentUri: layer/
+      CompatibleRuntimes:
+        - python3.11
+
+Outputs:
+  WebsiteURL:
+    Description: URL del sitio web estático en S3
+    Value: !GetAtt FrontendBucket.WebsiteURL
+
+  MyApi:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
