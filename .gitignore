@@ -1,0 +1,23 @@
+.venv/
+.vscode/
+
+*.logs/
+
+/logs
+.env
+
+__pycache__/
+*.pyc
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+
+*.zip
+
+/cert/cert.crt
+/cert/pass.key
+/cert local
+
+layer/
