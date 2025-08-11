@@ -6,14 +6,17 @@
 # 1. instalar la libreria
 python -m pip install schema -t layer/python
 
-# Para desplegar y configurar elk despliegue
-#General
+# Para desplegar y configurar el despliegue inicialmente
+# General
 sam deploy --guided
-#Personal
+# Personal
 sam deploy --guided --profile aws-alisson-correo-outlook
 
+# Para desplegar cambios
+sam deploy
+
 # Para probar local
-sam local invoke ./backend/fondos_gestionar --event ./backend/event.json
+python .\main.py
 ```
 
 ## Push - remoto
