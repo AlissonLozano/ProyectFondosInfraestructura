@@ -78,9 +78,9 @@ def peticion_get(params:Any)->Dict:
         indmov:Dict= indmov_
         producto:Dict= indmov["producto"]
         list_movimientos.append({
-            "id_movimiento": indmov["id"],
+            "id_movimiento": int(indmov["id"]),
             "producto":{
-                "id":producto["id"],
+                "id":int(producto["id"]),
                 "nombre":producto["Nombre"],
                 "categoria":producto["Categoria"],
             },
