@@ -73,7 +73,7 @@ def peticion_get(params:Any)->Dict:
             "No se puede gestionar los productos y  el usuario"
         )
     gestionar= list_gestionar[0]
-    productos_activos_bd= gestionar["productos_activos"]
+    productos_activos_bd:Dict= gestionar["productos_activos"]
 
     #secuencia buscar productos
     list_prods_bd= search_table_product(params)
@@ -88,16 +88,18 @@ def peticion_get(params:Any)->Dict:
             }
         })
 
-
     #secuencia ajustar productos
     productos_activos=[]
     productos_disponibles= copy.deepcopy(list_prods_bd)
-    for keyprod in productos_activos_bd:
+    for keyprod, valueprod_ in productos_activos_bd.items():
+        valueprod:Dict=valueprod_
         if prods.get(keyprod) is None:
             continue
-        prodind= prods.get(keyprod)
-        productos_activos.append(prodind["data"])
-        productos_disponibles.pop(prodind["position"])
+        prodindall= prods.get(keyprod)
+        prodind= prodindall["data"]
+        prodind.update({"valor": valueprod.get("valor")})
+        productos_activos.append(prodind)
+        productos_disponibles.pop(prodindall["position"])
 
     if params["tipo"] == "activos":
         productos_all= copy.deepcopy(productos_activos)
