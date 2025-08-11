@@ -67,10 +67,13 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref TableFondosUser
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableFondosGestionarProductos
       Environment:
         Variables:
           AWS_REGION_SERVICES: !Sub "${AWS::Region}"
           TABLE_FONDO_SUSER: !Ref TableFondosUser
+          TABLE_FONDOS_GESTIONAR_PRODUCTOS: !Ref TableFondosGestionarProductos
       Layers:
         - !Ref LayerSchema
       Events:
@@ -130,11 +133,13 @@ Resources:
           TargetOriginId: FrontendS3Origin
           ViewerProtocolPolicy: redirect-to-https
           AllowedMethods:
-            - GET
             - HEAD
+            - GET
+            - OPTIONS
           CachedMethods:
-            - GET
             - HEAD
+            - GET
+            - OPTIONS
           ForwardedValues:
             QueryString: false
             Cookies:
