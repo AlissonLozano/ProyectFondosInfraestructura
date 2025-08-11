@@ -75,7 +75,7 @@ def peticion_get(params:Any)->Dict:
         "msg":"Consulta exitosa",
         "msg_context":"",
         "obj":{
-            "cupo": gestionar["productos_activos"],
+            "cupo": gestionar["cupo"],
             "cuenta": user["cuenta"]
         }
     }
