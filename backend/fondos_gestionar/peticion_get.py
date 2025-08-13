@@ -78,28 +78,20 @@ def peticion_get(params:Any)->Dict:
     #secuencia buscar productos
     list_prods_bd= search_table_product(params)
 
-    prods= {}
-    for index, prodind_ in enumerate(list_prods_bd):
-        prodind:Dict= prodind_
-        prods.update({
-            f"id_producto_{prodind['id']}":{
-                "position": index,
-                "data":prodind
-            }
-        })
-
     #secuencia ajustar productos
     productos_activos=[]
-    productos_disponibles= copy.deepcopy(list_prods_bd)
-    for keyprod, valueprod_ in productos_activos_bd.items():
+    productos_disponibles= []
+    for valueprod_ in list_prods_bd:
         valueprod:Dict=valueprod_
-        if prods.get(keyprod) is None:
-            continue
-        prodindall= prods.get(keyprod)
-        prodind= prodindall["data"]
-        prodind.update({"valor": valueprod.get("valor")})
-        productos_activos.append(prodind)
-        productos_disponibles.pop(prodindall["position"])
+        id_= f"id_producto_{valueprod['id']}"
+        if productos_activos_bd.get(id_) is None:
+            productos_disponibles.append(valueprod_)
+        else:
+            prod_activo:Dict= productos_activos_bd.get(id_)
+            productos_activos.append({
+                **valueprod_,
+                "valor": prod_activo.get("valor")
+            })
 
     if params["tipo"] == "activos":
         productos_all= copy.deepcopy(productos_activos)
