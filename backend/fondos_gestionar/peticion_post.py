@@ -197,6 +197,7 @@ def peticion_post(body:Any)->Dict:
             "valor": valor
         }
     }
+    logger_servicio.info("se enviara a el correo %s", res)
     return res
 
 
@@ -231,6 +232,7 @@ def enviar_notificacion(
                 "Notificación suscribsición a el fondo",
                 body_html
             )
+            logger_servicio.info("se enviara a el correo %s", email)
             return
         if notificacion == "celular":
             msg= (
@@ -241,5 +243,6 @@ def enviar_notificacion(
                 f"+57{celular}",
                 msg
             )
+            logger_servicio.info("se enviara a el celular %s", celular)
     except Exception as ex:
         logger_servicio.error("No se pudo enviar la notificacion %s", ex)
