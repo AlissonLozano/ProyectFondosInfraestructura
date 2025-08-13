@@ -100,7 +100,6 @@ def peticion_post(body:Any)->Dict:
             "No se encontro el producto"
         )
     producto:Dict= list_prod[0]
-    print(producto, id_producto)
 
 
     #secuencia analizar transaccion
