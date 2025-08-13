@@ -15,6 +15,9 @@ sam deploy --guided --profile aws-alisson-correo-outlook
 # Para desplegar cambios
 sam deploy
 
+# Para subir el front
+./deploy_front
+
 # Para probar local
 python .\main.py
 ```
