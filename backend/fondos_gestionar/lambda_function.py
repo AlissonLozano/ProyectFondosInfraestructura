@@ -1,10 +1,13 @@
 """controlador"""
 import json
+import logging
 
 from utils import ExceptionPeticion, ExceptionCustom, JSONEncoder
 from peticion_post import peticion_post
 from peticion_put import peticion_put
 from peticion_get import peticion_get
+
+logger_servicio = logging.getLogger("logger_servicio")
 
 def lambda_handler(event, context):
     """controlador del lambda"""
@@ -43,6 +46,7 @@ def lambda_handler(event, context):
         res["codigo"]= 400
         res["msg"]= ex.msg
         res["msg_context"]= f"{ex}"
+        logger_servicio.error("Error de peticion %s", res)
         return {
             "statusCode": 400,
             "body": json.dumps(res, cls=JSONEncoder),
@@ -56,6 +60,7 @@ def lambda_handler(event, context):
         res["codigo"]= 404
         res["msg"]= "Metodo no encontrado"
         res["msg_context"]= f"{ex}"
+        logger_servicio.error("Error custumizado %s", res)
         return {
             "statusCode": 404,
             "body": json.dumps(res, cls=JSONEncoder),
@@ -68,6 +73,7 @@ def lambda_handler(event, context):
     except Exception as ex:
         res["codigo"]= 400
         res["msg_context"]= f"{ex}"
+        logger_servicio.error("Error general %s", res)
         return {
             "statusCode": 400,
             "body": json.dumps(res, cls=JSONEncoder),

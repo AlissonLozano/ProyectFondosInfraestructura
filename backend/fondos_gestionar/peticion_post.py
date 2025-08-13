@@ -1,14 +1,19 @@
 """peticion post"""
+import os
+import logging
 import json
 import copy
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union, Literal
 from decimal import Decimal
 from datetime import datetime, timedelta
-from schema import Use, And, Schema
+from schema import Use, And, Schema, Optional as OptionalSchema
 
 from utils import ExceptionPeticion, ExceptionCustom
 from lib.dynamo_lib import DynamoDBHandler, parse_format_dynamo
+from lib.Notify_lib import HandlerNotify
 from env_ import VariablesEnv
+
+logger_servicio = logging.getLogger("logger_servicio")
 
 def peticion_post(body:Any)->Dict:
     """peticion para subcribirse al fondo"""
@@ -38,11 +43,17 @@ def peticion_post(body:Any)->Dict:
                 Use(Decimal),
                 error= "'valor' debe ser float"
             ),
+            OptionalSchema("notificacion"): And(
+                Use(str),
+                lambda x: x in ["email", "celular"],
+                error= "'valor' debe ser float"
+            ),
         })
-        body= schema_body.validate(body)
+        body:Dict= schema_body.validate(body)
         id_user= body["id_user"]
         id_producto= body["id_producto"]
         valor= body["valor"]
+        notificacion= body["notificacion"] if body.get("notificacion") else None
     except Exception as ex:
         raise ExceptionPeticion(
             f"<<SchemaError>> {ex}",
@@ -69,12 +80,14 @@ def peticion_post(body:Any)->Dict:
             "No se puede gestionar los productos y  el usuario"
         )
     gestionar= list_gestionar[0]
+    email= gestionar["email"]
+    celular=  gestionar["celular"]
 
 
     #secuencia buscar producto
     list_prod:List= instance_dynamo.get_item(
         VariablesEnv.TABLE_FONDOS_PRODUCTOS.value,
-        {"id": str(id_user)}
+        {"id": str(id_producto)}
     )
     if len(list_prod) == 0:
         raise ExceptionPeticion(
@@ -86,7 +99,8 @@ def peticion_post(body:Any)->Dict:
             "<<Raise Custom>> len(list_prod) > 1",
             "No se encontro el producto"
         )
-    producto= list_prod[0]
+    producto:Dict= list_prod[0]
+    print(producto, id_producto)
 
 
     #secuencia analizar transaccion
@@ -133,7 +147,8 @@ def peticion_post(body:Any)->Dict:
                         "fecha": {"S": datetime_trx_},
                         "saldo_antes": {"N": str(cupo_old)},
                         "saldo_despues":{"N": str(cupo_new)},
-                        "productos_activos": {"M": parse_format_dynamo(productos_activos_new)}
+                        "productos_activos": {"M": parse_format_dynamo(productos_activos_new)},
+                        "descripcion": {"S":"SUSCRIPCIÓN"}
                     },
                     "ConditionExpression": "attribute_not_exists(id)"  # Evita sobreescribir
                 }
@@ -161,6 +176,15 @@ def peticion_post(body:Any)->Dict:
         ]
     )
 
+    enviar_notificacion(
+        notificacion,
+        email,
+        celular,
+        id_movimiento,
+        producto["Nombre"],
+        valor
+    )
+
 
     res= {
         "status":True,
@@ -175,3 +199,48 @@ def peticion_post(body:Any)->Dict:
         }
     }
     return res
+
+
+def enviar_notificacion(
+    notificacion:Union[None, Literal["email", "celular"]],
+    email:str,
+    celular:str,
+    id_movimiento:int,
+    prod_nombre:str,
+    valor:Decimal
+):
+    """proceso para notificar al cliente"""
+    try:
+        if notificacion is None:
+            return
+        helper_notificacion= HandlerNotify(os.getenv("AWS_REGION_SERVICES"))
+        if notificacion == "email":
+            body_html= f"""\
+                <html>
+                <head></head>
+                <body>
+                <p>Estimado(a) Cliente</p>
+                <p>Te has suscrito al fondo <strong> {prod_nombre} </strong> por un valor de ${valor}, identificador de la transacción {id_movimiento} </p>
+                <p>¿No reconoce esta actividad?</p>
+                <p>No responda a este correo ya que solamente es informativo.</p>
+                </body>
+                </html>
+            """
+            helper_notificacion.enviar_email(
+                os.getenv("NOTIFY_EMAIL_SOURCE"),
+                [email],
+                "Notificación suscribsición a el fondo",
+                body_html
+            )
+            return
+        if notificacion == "celular":
+            msg= (
+                "Te has suscrito al fondo {prod_nombre} por un valor de ${valor},"
+                " identificador de la transacción {id_movimiento}"
+            )
+            helper_notificacion.enviar_celular(
+                f"+57{celular}",
+                msg
+            )
+    except Exception as ex:
+        logger_servicio.error("No se pudo enviar la notificacion %s", ex)

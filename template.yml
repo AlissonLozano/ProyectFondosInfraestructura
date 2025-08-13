@@ -1,6 +1,12 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: "AWS::Serverless-2016-10-31"
 
+Parameters:
+  EmailAddress:
+    Type: String
+    Description: Dirección de correo a usar en SNS
+    Default: usuario@example.com
+
 Resources:
   FondosGestionarFunction:
     Type: "AWS::Serverless::Function"
@@ -24,7 +30,7 @@ Resources:
           TABLE_FONDOS_PRODUCTOS: !Ref TableFondosProductos
           TABLE_FONDOS_GESTIONAR_PRODUCTOS: !Ref TableFondosGestionarProductos
           TABLE_FONDOS_MOVIMIENTOS: !Ref TableFondosMovimientos
-          TABLE_FONDO_SUSER: !Ref TableFondosUser
+          NOTIFY_EMAIL_SOURCE: !Ref EmailAddress
       Layers:
         - !Ref LayerSchema
       Events:
@@ -72,7 +78,6 @@ Resources:
       Environment:
         Variables:
           AWS_REGION_SERVICES: !Sub "${AWS::Region}"
-          TABLE_FONDO_SUSER: !Ref TableFondosUser
           TABLE_FONDOS_GESTIONAR_PRODUCTOS: !Ref TableFondosGestionarProductos
       Layers:
         - !Ref LayerSchema

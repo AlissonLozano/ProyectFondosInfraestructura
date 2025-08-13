@@ -34,23 +34,6 @@ def peticion_get(params:Any)->Dict:
         os.getenv("AWS_REGION_SERVICES")
     )
 
-    #secuencia buscar usuario
-    list_user:List= instance_dynamo.get_item(
-        os.getenv("TABLE_FONDO_SUSER"),
-        {"id": str(params["id_user"])}
-    )
-    if len(list_user) == 0:
-        raise ExceptionPeticion(
-            "<<Raise Custom>> len(list_user) == 0",
-            "No se puede encontrar el usuario"
-        )
-    if len(list_user) > 1:
-        raise ExceptionPeticion(
-            "<<Raise Custom>> len(list_user) > 1",
-            " No se puede encontrar el usuario"
-        )
-    user= list_user[0]
-
     #secuencia buscar gestion del usuario
     list_gestionar:List= instance_dynamo.get_item(
         os.getenv("TABLE_FONDOS_GESTIONAR_PRODUCTOS"),
@@ -66,7 +49,7 @@ def peticion_get(params:Any)->Dict:
             "<<Raise Custom>> len(list_prod) > 1",
             "No se puede gestionar los productos y  el usuario"
         )
-    gestionar= list_gestionar[0]
+    gestion= list_gestionar[0]
 
 
     res= {
@@ -75,8 +58,8 @@ def peticion_get(params:Any)->Dict:
         "msg":"Consulta exitosa",
         "msg_context":"",
         "obj":{
-            "cupo": gestionar["cupo"],
-            "cuenta": user["cuenta"]
+            "cupo": gestion["cupo"],
+            "cuenta": gestion["cuenta"]
         }
     }
     return res

@@ -120,7 +120,8 @@ def peticion_put(params:Any, body:Any)->Dict:
                         "fecha": {"S": datetime_trx_},
                         "saldo_antes": {"N": str(cupo_old)},
                         "saldo_despues":{"N": str(cupo_new)},
-                        "productos_activos": {"M": parse_format_dynamo(productos_activos_new)}
+                        "productos_activos": {"M": parse_format_dynamo(productos_activos_new)},
+                        "descripcion":{"S":"CANCELACIÓN"}
                     },
                     "ConditionExpression": "attribute_not_exists(id)"  # Evita sobreescribir
                 }
